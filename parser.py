@@ -12,11 +12,11 @@ class IncorrectFile(Exception):
 
 def getFile():
     parser = argparse.ArgumentParser(description='A test program.')
-    parser.add_argument("-get_file_to_read", help="Collects the supplied argument as a file to read from.")
-    parser.add_argument("-get_file_to_write", help="Collects the supplied argument as a file to write to.")
+    parser.add_argument("-inp", help="Collects the supplied argument as a file to read from.")
+    parser.add_argument("-out", help="Collects the supplied argument as a file to write to.")
     args = parser.parse_args()
-    read_file = args.get_file_to_read
-    write_file = args.get_file_to_write
+    read_file = args.inp
+    write_file = args.out
     if read_file is None:
         if os.path.isfile('file.sqpy'):
             read_file = 'file.sqpy'
@@ -25,7 +25,6 @@ def getFile():
 
     if write_file is None:
         write_file = 'output.sql'
-
     return read_file, write_file
 
 
@@ -77,6 +76,8 @@ def collectInformation(defines, file):
     part = 0
     rules = {'foreign': True}
     for line in open(file):
+        if line.startswith('// '):
+            continue
         line = line.strip()
         if line == '':
             continue
@@ -121,9 +122,9 @@ def buildEntity(key, information, Defines, completedEntities):
     def getUniqueAttribute(Att_Type, Unique, previous):
         match Att_Type:
             case 'INT':
-                return (previous + 1 if previous is not None else 1) if Unique else random.randrange(1000000)
+                return (previous + 1 if previous is not None else 1) if Unique else random.randrange(10000000)
             case 'VARCHAR':
-                return 'a'
+                return str(((int(previous.replace('\'', '')) + 1) if previous is not None else 1) if Unique else random.randrange(10000000))
             case 'DATE':
                 return f'{random.randrange(1900, 2022)}-{random.randrange(1, 13)}-{random.randrange(1, 29)}'
             case 'DOUBLE' | 'FLOAT':
