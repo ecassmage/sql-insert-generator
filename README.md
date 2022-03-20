@@ -1,6 +1,7 @@
 # sql-insert-generator
 Generates some sql inserts based on specifications
 
+##random_gex
 there are three ways to define possible values for each attribute
   1. write an array -> [optiona, optionb, optionc]
   2. write in file  -> {filename}
