@@ -19,7 +19,7 @@ to run this program, you must run the parser.py program and give it the file you
 because I thought it would be funny to reject any other types of files including other .txt files.
 <br>  
 example would be:
-```
+```txt
 python parser.py TestFile.sqpy
 ```
 <br>
