@@ -12,6 +12,7 @@ specifications. those supported are:
   2. {} -> allows for the previous section to be repeated for however many times is specified in these braces. Only supports {number} for now. Plan on adding {number, number} in the future
   3. () -> everything enclosed in here will be considered its own set like in regex (abc){2} will be abcabc vs abc{2} will be abcc
 ---
+W
 <br>
 <br>
 <br>
