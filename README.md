@@ -17,6 +17,7 @@ specifications. those supported are:
 <br>
 to run this program, you must run the parser.py program and give it the file you wish it to read. This file needs to be .sqpy (.txt file), no other file will be accepted
 because I thought it would be funny to reject any other types of files including other .txt files.
-<br>  example would be python parser.py TestFile.sqpy
+<br>  example would be 
+```python parser.py TestFile.sqpy```
 <br>
 If you want 
