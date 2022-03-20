@@ -1,0 +1,98 @@
+foreign = true
+%%
+
+rank = [Baron, Count, Duke, King, Emperor]
+specialty = [quantum, explosions, math, physics, gym, health, science, biology, computer]
+office_name = [math, science, computers, economics, trains, tele]
+reg = 'abc'
+degree_program = [bachelor, MS, PHD, MASTERS]
+%%
+
+CREATE TABLE Professor (
+    employee_id                 INT             AUTOINCREMENT,
+
+    fname                       VARCHAR(25)     <fname>,
+    lname                       VARCHAR(25)     <lname>,
+    employee_rank               VARCHAR(10)     <rank>,
+    research_specialty          VARCHAR(20)     <specialty>,
+
+    PRIMARY KEY (employee_id)
+);
+
+CREATE TABLE Department(
+    department_id               INT             AUTOINCREMENT,
+
+    main_office                 VARCHAR(25)     '[123][0-9]{3}',
+    name                        VARCHAR(25)     <office_name>,
+    chairperson                 INT,
+
+    PRIMARY KEY(department_id),
+    UNIQUE (main_office),                                                               -- No sharing a main office, however since a main office can probably be switched, it is not good as a primary key.
+    UNIQUE (name),                                                                      -- Two departments shouldn't have the same name, that doesn't make sense.
+    FOREIGN KEY (chairperson)               REFERENCES Professor(employee_id)
+);
+
+CREATE TABLE Project(
+    project_id                  INT             AUTOINCREMENT,
+    sponsor_name                VARCHAR(10)     '[A-Z][a-z]{2}[0-9]{3}',
+    budget                      DOUBLE           '[0-9]{5}.[0-9]{2}',    -- Negative budget should not be a thing, using default, because null is just a budget of 0.
+    start_date                  DATE            '1000-10-10',                               -- Depending on when project is added to database, this might not need to be NOT NULL.
+    end_date                    DATE,                                                   -- Because a project may not have a definite end date due to uncertainty, I believe that this shouldn't be required
+    principal_investigator      INT             ,
+
+    PRIMARY KEY(project_id),
+    FOREIGN KEY (principal_investigator)    REFERENCES Professor(employee_id)
+);
+
+CREATE TABLE Graduate(
+    student_id                  INT             AUTOINCREMENT,
+
+    fname                       VARCHAR(20)     <fname>,
+    lname                       VARCHAR(20)     <lname>,
+    degree_program              VARCHAR(14)      <degree_program>,
+    major                       VARCHAR(50)     <specialty>,
+    major_department_id         INT             ,
+    peer_advisor                INT,                                                    -- Because peer advisor is senior, what about the most senior graduate student?
+
+    PRIMARY KEY (student_id),
+    FOREIGN KEY (major_department_id)       REFERENCES Department(department_id),
+    FOREIGN KEY (peer_advisor)              REFERENCES Graduate(student_id)
+);
+
+CREATE TABLE works_on(
+    works_on_professor_id       INT             ,
+    works_on_graduate_id        INT             ,
+    works_on_project_id         INT             ,
+
+    PRIMARY KEY (works_on_professor_id),
+    FOREIGN KEY (works_on_professor_id)     REFERENCES Professor(employee_id),
+    FOREIGN KEY (works_on_graduate_id)      REFERENCES Graduate(student_id),
+    FOREIGN KEY (works_on_project_id)       REFERENCES Project(project_id)
+);
+
+CREATE TABLE works_in(
+    time_percentage             INT             '[0-9]{2}',
+    works_in_department_id      INT             ,
+    works_in_professor_id       INT             ,
+
+    PRIMARY KEY (works_in_professor_id),
+    FOREIGN KEY (works_in_department_id)    REFERENCES Department(department_id),
+    FOREIGN KEY (works_in_professor_id)     REFERENCES Professor(employee_id)
+);
+
+CREATE TABLE co_investigator(
+    co_investigator_id          INT             ,
+    co_project_id               INT             ,
+
+    PRIMARY KEY (co_investigator_id),
+    FOREIGN KEY (co_project_id)             REFERENCES Project(project_id),
+    FOREIGN KEY (co_investigator_id)        REFERENCES Professor(employee_id)
+);
+%%
+Professor = 25
+Department = 6
+Project = 30
+Graduate = 40
+works_on = 40
+works_in = 40
+co_investigator = 75

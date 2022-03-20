@@ -1,216 +1,244 @@
-import argparse
-import os
 import re
+import sys
+import os
 import random
-import copy
+
+from SQPYErrors import TooManyArgumentsError, IncorrectSQPYError, IncorrectFileError
+import FormatFile
+from EntityPackage import Entities
+states = {'special': -1, 'file': 0, 'array': 1, 'r_gex': 2}
+customPtr = 10
 
 
-class IncorrectFile(Exception):
-    def __init__(self, file):
-        super().__init__(f"{file} is not a .sqpy file. There fore I will not except it!!!")
+def getArgFiles(arg1, arg2):
+    if len(sys.argv) > 3:
+        raise TooManyArgumentsError
+    read_file = sys.argv[1] if len(sys.argv) > 1 else None
+    write_file = sys.argv[2] if len(sys.argv) > 2 else None
 
-
-def getFile():
-    parser = argparse.ArgumentParser(description='A test program.')
-    parser.add_argument("-inp", help="Collects the supplied argument as a file to read from.")
-    parser.add_argument("-out", help="Collects the supplied argument as a file to write to.")
-    args = parser.parse_args()
-    read_file = args.inp
-    write_file = args.out
     if read_file is None:
-        if os.path.isfile('file.sqpy'):
-            read_file = 'file.sqpy'
+        if os.path.isfile(arg1):
+            read_file = arg1
         else:
-            raise argparse.ArgumentTypeError("Did not receive an sqpy file and file.sqpy (the stand-in was not located)")
+            exit()
 
     if write_file is None:
-        write_file = 'output.sql'
+        write_file = arg2 if arg2 is not None else 'output.sql'
     return read_file, write_file
 
 
 def checkFile(file):
     if not file.endswith(".sqpy"):
-        raise IncorrectFile(file)
+        raise IncorrectFileError(file)
 
 
 def preDefined():
+    def preDefined_SQL():
+        definedLists['0'] = [states['special'], "AUTOINCREMENT"]
+
     definedLists = {None: None}
-    if os.path.isfile('fname.txt'):
-        definedLists['fname'] = [line.replace('\n', '').replace('\r', '') for line in open('fname.txt')]
-    if os.path.isfile('lname.txt'):
-        definedLists['lname'] = [line.replace('\n', '').replace('\r', '').capitalize() for line in open('lname.txt')]
-    if os.path.isfile('hospital_names.txt'):
-        definedLists['hospital_names'] = [line.replace('\n', '').replace('\r', '') for line in open('hospital_names.txt')]
-    if os.path.isfile('street_names.txt'):
-        definedLists['street_names'] = [line.replace('\n', '').replace('\r', '') for line in open('street_names.txt')]
+    if os.path.isfile('Defined_Files\\fname.txt'):
+        definedLists['fname'] = [states['array'], [line.strip() for line in open('Defined_Files\\fname.txt')]]
+    if os.path.isfile('Defined_Files\\lname.txt'):
+        definedLists['lname'] = [states['array'], [line.strip().capitalize() for line in open('Defined_Files\\lname.txt')]]
+    if os.path.isfile('Defined_Files\\hospital_names.txt'):
+        definedLists['hospital_names'] = [states['array'], [line.strip() for line in open('Defined_Files\\hospital_names.txt')]]
+    if os.path.isfile('Defined_Files\\street_names.txt'):
+        definedLists['street_names'] = [states['array'], [line.strip() for line in open('Defined_Files\\street_names.txt')]]
+
+    preDefined_SQL()
     return definedLists
 
 
-def parse_line(container):
-    newContainer = []
-    first_keys = ['INT', 'VARCHAR', 'BOOL', 'DATE', 'DOUBLE', 'FLOAT', 'NULL']
-    third_keys = ['UNIQUE', "FOREIGN"]
-    for element in container:
-        split_element = element.split(" ")
-        ele_1 = split_element[0] if len(split_element) > 0 and split_element[0] in first_keys else None
-        ele_2 = split_element[1] if len(split_element) > 1 and split_element[1] not in third_keys else None
-        ele_3 = split_element[1] if len(split_element) > 1 and split_element[1] in third_keys else split_element[2] if len(split_element) > 2 and split_element[2] in third_keys else None
-        newContainer.append([ele_1, ele_2, ele_3])
-    return tuple(newContainer)
+def definedActions(string, lhsReturn=True):
+    """
+    file = "{.+}"
+    array = "[.+]"
+    r_gex = ".+"
+    """
 
+    def get_file(arg):
+        file = re.findall('[^{}]+', arg)[0].strip()
+        f_ptr = open(file)
+        file = []
+        for line in f_ptr:
+            file.append(line.strip())
+        f_ptr.close()
+        return file
 
-def getDefines(define_line):
-    if not define_line.endswith('.txt'):
-        if define_line.startswith('range'):
-            regex = re.findall('[0-9]+', define_line)
-            temp = [line for line in range(int(regex[0] if len(regex) == 2 else 0), int(regex[1] if len(regex) == 2 else regex[0]))]
-        else:
-            temp = define_line.replace('[', '').replace(']', '').split(',')
+    def get_array(arg):
+        array = re.findall('[^\\[\\]]+', arg)[0].replace(', ', ',').split(',')
+        return array
+
+    def get_r_gex(arg):
+        r_gex = ''.join(re.findall("'.+'", arg)[0].replace("'", '', 1).rsplit("'", 1))
+        return r_gex
+    lhs, rhs = None, None
+    if lhsReturn:
+        lhs, rhs = string.split('=')
     else:
-        temp = [line.replace('\n', '').replace('\r', '') for line in open(define_line)]
-    return temp
+        rhs = string
+    for num, char in enumerate(rhs):
+        match char:
+            case '{':
+                state = states['array']
+                rhs = get_file(rhs[num:])
+                break
+            case '[':
+                state = states['array']
+                rhs = get_array(rhs[num:])
+                break
+            case '\'':
+                state = states['r_gex']
+                rhs = get_r_gex(rhs[num:])
+                break
+    else:
+        raise IncorrectSQPYError(f"Action not formatted correctly\n{string}")
+    return (state, lhs.strip(), rhs) if lhsReturn else (state, rhs)
 
 
-def collectInformation(defines, file):
-    Entities = {}
-    part = 0
-    rules = {'foreign': True}
-    for line in open(file):
-        if line.startswith('// '):
+def mk_defines(Defines, lines):
+    global customPtr
+    for gex in re.findall("{.+}|\\[.+]|AUTOINCREMENT|'.+'", lines, re.IGNORECASE):
+        if gex.upper() == "AUTOINCREMENT":
+            lines = lines.replace(gex, f"<0>", 1)
             continue
+        state, rhs = definedActions(gex, False)
+        Defines[str(customPtr)] = [state, rhs]
+        lines = lines.replace(gex, f"<{str(customPtr)}>", 1)
+        customPtr += 1
+    return lines
+
+
+def sql_reader(lines, Defines):
+    lines = mk_defines(Defines, lines)
+    information = lines.replace('\n', '').replace('\r', '').split(',')
+    number = 1
+    try:
+        table, information[0] = information[0].split('(', 1)
+        table = re.findall('\\w+', table)[2]
+        numberRe = re.findall("(\\* *[0-9]+)", information[-1])
+        if len(numberRe) > 0:
+            information[-1] = information[-1].rsplit('*', 1)[0]
+            number = int(numberRe[0].replace("*", '').replace(" ", ''))
+    except Exception:
+        raise IncorrectSQPYError("Incorrect SQL Table construction")
+
+    return table, information, number
+
+
+def switched_Section(data):
+    booleans = {}
+    for line in data.split("\n"):
+        if line == '':
+            continue
+        try:
+            boolean_name, boolean = line.replace(' ', '').split("=")
+        except Exception:
+            raise IncorrectSQPYError("Incorrect First Section Format Error")
+        if boolean.lower() == 'true':
+            booleans[boolean_name.lower()] = True
+        elif boolean.lower() == 'false':
+            booleans[boolean_name.lower()] = False
+        else:
+            raise IncorrectSQPYError(f"First section Error >> '{line}' uses '{boolean}' instead of true or false")
+    return booleans
+
+
+def Defined_Section(data, Defines):
+    # temp = data.split('\n')
+    for line in data.split('\n'):
         line = line.strip()
         if line == '':
             continue
-
-        match part:
-            case 0:
-                line = line.replace(' ', '')
-                if line == '%%':
-                    part = 1
-                    continue
-                splitted = line.split('=')
-                match splitted[0]:
-                    case 'foreign':
-                        rules[splitted[0]] = True if splitted[1].lower() == 'true' else False
-
-            case 1:
-                line = line.replace(' ', '')
-
-                if line == '%%':
-                    part = 2
-                    continue
-
-                split_line = line.split("=", 1)
-                identifier = split_line[0]
-                defines[identifier] = getDefines(split_line[1])
-
-            case 2:
-                split_line = (''.join(line.rsplit(')', 1))).split("(", 1)
-                entity_split = split_line[1].split(" * ", 1)
-                if len(entity_split) == 1:
-                    entity_split.append(str(1))
-
-                identifier = split_line[0].replace(' ', '')
-                Entities[identifier] = [parse_line(entity_split[0].split(', ')), int(entity_split[1])]
-
-    return defines, Entities, rules
+        state, lhs, rhs = definedActions(line)
+        Defines[lhs] = [state, rhs]
 
 
-def buildEntity(key, information, Defines, completedEntities):
-    string = []
+def SQL_Section(data, Defines):
+    # temp = data.split(';')
+    entities = {}
 
-    def getUniqueAttribute(Att_Type, Unique, previous):
-        match Att_Type:
-            case 'INT':
-                return (previous + 1 if previous is not None else 1) if Unique else random.randrange(10000000)
-            case 'VARCHAR':
-                return str(((int(previous.replace('\'', '')) + 1) if previous is not None else 1) if Unique else random.randrange(10000000))
-            case 'DATE':
-                return f'{random.randrange(1900, 2022)}-{random.randrange(1, 13)}-{random.randrange(1, 29)}'
-            case 'DOUBLE' | 'FLOAT':
-                return round(random.uniform(0, 1000000), 2)
-            case 'NULL':
-                return 'null'
+    for line in data.split(';'):
+        line = line.strip()
+        if line == '':
+            continue
+        table_name, table_attributes, number = sql_reader(line, Defines)
+        entity_package = Entities.Entities(table_name, table_attributes, number)
+        entities[table_name] = entity_package
+    return entities, Defines
 
-    def formatChoice(Att_Type, result):
-        if result is None:
-            return None
-        match Att_Type:
-            case 'INT':
-                return int(result)
-            case 'VARCHAR' | 'DATE':
-                return f"'{str(result)}'"
-            case 'DOUBLE' | 'FLOAT':
-                return float(round(random.uniform(0, 1000000), 2))
-            case 'NULL':
-                return result
 
-    for pos, section in enumerate(information):
-        foreign = False
+def Iterations_Section(data, entities):
+    for line in data.replace(' ', '').split("\n"):
+        if line == '':
+            continue
         try:
-            if section[2] == 'FOREIGN':
-                choice = section[1]
-                foreign = True
-            else:
-                choice = random.choice(Defines[section[1]]) if Defines[section[1]] is not None else getUniqueAttribute(section[0], True if section[2] == 'UNIQUE' else False, completedEntities[key][-1][pos] if len(completedEntities[key]) > 0 else None)
-        except KeyError:
-            choice = 0
-        except IndexError:
-            raise IndexError(f"Not enough choices have been given and we have run out.\n"
-                             f"key: {key}({section[0]} {section[1].replace(f'{key}_', '').replace(f'_UNIQUE', '') if section[1].replace(f'{key}_', '').replace(f'_UNIQUE', '') is not None else ''} {section[2] if section[2] is not None else ''})")
-        if section[2] == "UNIQUE" and Defines[section[1]] is not None:
-            Defines[section[1]].pop(Defines[section[1]].index(choice))
-        string.append(formatChoice(section[0], choice) if not foreign else choice)
-    return string
+            line = line.split('=')
+            a = entities[line[0]]
+            entities[line[0]].iterations = int(line[1])
+
+        except Exception:
+            raise IncorrectSQPYError("Fourth section not formatted correctly")
 
 
-def foreign_keys(completed_list, rule):
-    for key in completed_list:
-        for entity in completed_list[key]:
-            for num, section in enumerate(entity):
-                if type(section) is str:
-                    regex = re.findall('\\([0-9]+\\)', section)
-                    if len(regex) == 1:
-                        section = section.replace(regex[0], '')
-                        regex = re.findall('[0-9]+', regex[0])
-                        entity[num] = random.choice(completed_list[section])[int(regex[0])] if rule else 'null'
-
-                        pass
+def fill_foreign_integer(entities):
+    list_keys = list(entities.keys())
+    for num, entity_set in enumerate(entities):
+        for entity in entities[entity_set].entities:
+            for attribute in entity.attributes:
+                if entity.attributes[attribute].foreign is not None:
+                    index_foreign = list_keys.index(entity.attributes[attribute].foreign[0]) if entity.attributes[attribute].foreign[0] in list_keys else -1
+                    index_self = list_keys.index(entity.name) if entity.name in list_keys else -1
+                    if index_foreign < index_self:
+                        a = entity.attributes[attribute].foreign[0]
+                        foreign_entity = entities[entity.attributes[attribute].foreign[0]]
+                        entity.attributes[attribute].set_value(random.choice(foreign_entity.entities).attributes[entity.attributes[attribute].foreign[1]].value)
+                    else:
+                        entity.attributes[attribute].set_value('null')
+                    pass
+                pass
     pass
 
 
-def writeSQL(information, output):
-    file = open(output, 'w')
-    for key in information:
-        for entity in information[key]:
-            values = ''
-            for num, section in enumerate(entity):
-                values += f', {section}' if num > 0 else str(section)
-            file.write(f"INSERT INTO {key} VALUES({values});\n")
-        file.write('\n')
-    file.close()
+def parse(file):
+    # action = "{.+}"
+    # array = "[.+]"
+    # r_gex = "'.+'"
+    Defines = preDefined()
+    parts = ''
+    for line in open(file):
+        ln = re.findall("-- [^\n]*", line)
+        if len(ln) > 0:
+            line = line.replace(ln[0], '')
+        parts += line
+    parts = parts.split("%%")
+    if len(parts) > 4:
+        raise IncorrectSQPYError("Too Many Sections (%%)")
+
+    booleans = switched_Section(parts[0])
+    Defined_Section(parts[1], Defines)
+    Entity_Sets, Defines = SQL_Section(parts[2], Defines)
+    Iterations_Section(parts[3], Entity_Sets)
+    return booleans, Entity_Sets, Defines
 
 
-def main():
-    read_file, write_file = getFile()
+def deal_with_foreign_keys(entities, boolean):
+    if boolean:
+        entities = FormatFile.set_foreign(entities, boolean)
+        fill_foreign_integer(entities)
+    return entities
+
+
+def main(arg1=None, arg2=None):
+    read_file, write_file = getArgFiles(arg1, arg2)
     checkFile(read_file)
-    Defines, Entities, rules = collectInformation(preDefined(), read_file)
-    completedEntities = {}
-    for key in Entities:
-        completedEntities[key] = []
-        for section in Entities[key][0]:
-            if section[2] == 'UNIQUE':
-                Defines[f"{key}_{section[1]}_UNIQUE"] = copy.copy(Defines.get(section[1], None))
-                section[1] = f"{key}_{section[1]}_UNIQUE"
-            pass
-    for key in Entities:
-        for _ in range(Entities[key][1]):
-            string = buildEntity(key, Entities[key][0], Defines, completedEntities)
-            completedEntities[key].append(string)
-        pass
+    booleans, entities, defines = parse(read_file)
+    for entity in entities:
+        entities[entity].build_line(defines)
+    entities = deal_with_foreign_keys(entities, booleans.get('foreign', True))
 
-    foreign_keys(completedEntities, rules['foreign'])
-    writeSQL(completedEntities, write_file)
+    FormatFile.write_file(entities, write_file)
     pass
 
 
