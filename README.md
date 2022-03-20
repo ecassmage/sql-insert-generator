@@ -16,7 +16,8 @@ specifications. those supported are:
 <br>
 
 
-## .sqpy File
+## Writing an .sqpy File
+
 
 
 ## Running the Program
