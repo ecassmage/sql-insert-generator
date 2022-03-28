@@ -38,7 +38,8 @@ There are three ways to define possible values for each attribute
 &emsp;&emsp;&emsp;&emsp; This Section contains rules for the program with which apply primarily to the program itself. <br>
 &emsp;&emsp;&emsp;&emsp; These rules will control certain areas such as the maximum failsafe of recursive iterations to try and <br>
 &emsp;&emsp;&emsp;&emsp; find a suitable primary_key. You can also disable and enable foreign keys if you don't wish for them to be <br>
-&emsp;&emsp;&emsp;&emsp; written. Currently, while some have been implemented, I have not implemented them all nor have they been implemented <br>
+&emsp;&emsp;&emsp;&emsp; written. Currently, while some have been implemented, I have not implemented them all nor have they<br>
+&emsp;&emsp;&emsp;&emsp; been implemented <br>
 &emsp;&emsp;&emsp;&emsp; to the degree I wish them to be, so it would be advised to leave this section blank for the time being.
 
 <hr style="width:90%; margin: auto; margin-left:40px">
@@ -153,7 +154,7 @@ CREATE TABLE table_demo(
 &emsp; &emsp; &emsp; &emsp; &emsp; &emsp; &emsp;&emsp;&ensp; specific Hospital id key. <br>
 
 > The Full structure for 2 is <br>
-> \<Referenced Entity>(.\<Any key in Referenced Entity>)? (->|=) \<Foreign Entity>((<lower bound>,)?\<upper bound>); <br>
+> \<Referenced Entity>(.\<Any key in Referenced Entity>)? (->|=) \<Foreign Entity>((\<lower bound>,)?\<upper bound>); <br>
 > ? means optional, | or \<> means replace with something valid
 
 <hr>
