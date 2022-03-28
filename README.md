@@ -46,15 +46,19 @@ There are three ways to define possible values for each attribute
 ### &emsp;&emsp; Section 2
 
 &emsp;&emsp;&emsp;&emsp; This is where you define sets of data to be used inside the third section. <br>
-&emsp;&emsp;&emsp;&emsp; These are for the moment static sets of data which can not be modified due to influence from other sets of data. <br>
-&emsp;&emsp;&emsp;&emsp; This section currently supports 3 kinds of data enclosed in their own unique characters ([], {}, '').  '' These are single quotes<br>
+&emsp;&emsp;&emsp;&emsp; These are for the moment static sets of data which can not be modified due to influence from other<br>
+&emsp;&emsp;&emsp;&emsp; sets of data. <br>
+&emsp;&emsp;&emsp;&emsp; This section currently supports 3 kinds of data enclosed in their own unique characters ([], {}, ' ').<br>
+&emsp;&emsp;&emsp;&emsp; ' ' are single quotes<br>
 <br>
-&emsp;&emsp;&emsp;&emsp; Note: While all data will be stored and chosen as strings, the final data type will be chosen based on type given in attribute. <br>
+&emsp;&emsp;&emsp;&emsp; Note: While all data will be stored and chosen as strings, the final data type will be chosen<br>
+&emsp;&emsp;&emsp;&emsp;&emsp;&emsp; &ensp; based on type given in attribute. <br>
 &emsp;&emsp;&emsp;&emsp;&emsp; [] stores arrays of data such as ``data = [data1, data2, data3]`` <- will choose from these 3 strings <br>
 &emsp;&emsp;&emsp;&emsp;&emsp; {} stores files of data such as ``data = {filename.txt}`` <- will choose from data located in this file <br>
 &emsp;&emsp;&emsp;&emsp;&emsp; '' stores r_gex specifications such as ``data = '[0-9]{3}'``<- will generate strings from 000-999 <br>
 
-&emsp;&emsp;&emsp;&emsp; A goal which I have is to utilize <> or some other character encasing identifier to allow for the 'importation' of data into some other data <br>
+&emsp;&emsp;&emsp;&emsp; A goal which I have is to utilize <> or some other character encasing identifier to allow for<br>
+&emsp;&emsp;&emsp;&emsp; the 'importation' of data into some other data <br>
 &emsp;&emsp;&emsp;&emsp; An example of what I mean is<br>
 &emsp;&emsp;&emsp;&emsp;``department = [science, math, chemistry]`` becomes <br>
 &emsp;&emsp;&emsp;&emsp;``data_r_gex = 'Dept of. <department>' -> 'Dept of. (science|math|chemistry)'``<br>
@@ -66,7 +70,6 @@ There are three ways to define possible values for each attribute
 
 &emsp;&emsp;&emsp;&emsp; This section contains the sql schema that is wanted to be generated.<br>
 &emsp;&emsp;&emsp;&emsp; As an example let us use the table below.
-<p style="text-align:right"> Words Are Here </p>
 
 ```sql
 CREATE TABLE table_demo(
@@ -128,24 +131,29 @@ CREATE TABLE table_demo(
 &emsp; &emsp; &emsp; &emsp; &emsp; ``Hospital -> Doctor(5);`` <br>
 &emsp; &emsp; &emsp; &emsp; &emsp; &emsp; Creates a relational limit where a Hospital entity can only be <br>
 &emsp; &emsp; &emsp; &emsp; &emsp; &emsp; related to 5 Doctor entities via any foreign keys. <br>
-&emsp; &emsp; &emsp; &emsp; &emsp; &emsp; **Note**: This will create a pool for all Doctor foreign keys referring to this specific Hospital for any of its keys.<br>
+&emsp; &emsp; &emsp; &emsp; &emsp; &emsp; **Note**: This will create a pool for all Doctor foreign keys referring to this <br>
+&emsp; &emsp; &emsp; &emsp; &emsp; &emsp; &emsp;&emsp;&ensp; specific Hospital for any of its keys. <br>
 
 &emsp; &emsp; &emsp; &emsp; &emsp; ``Hospital -> Doctor(0, 5);`` <br>
 &emsp; &emsp; &emsp; &emsp; &emsp; &emsp; Creates a relational limit where a Hospital entity can only be <br>
 &emsp; &emsp; &emsp; &emsp; &emsp; &emsp; related to between 0 and 5 Doctor entities via all foreign keys. <br>
-&emsp; &emsp; &emsp; &emsp; &emsp; &emsp; **Note**: This will create a pool for all Doctor foreign keys referring to this specific Hospital for any of its keys.<br>
+&emsp; &emsp; &emsp; &emsp; &emsp; &emsp; **Note**: This will create a pool for all Doctor foreign keys referring to this <br>
+&emsp; &emsp; &emsp; &emsp; &emsp; &emsp; &emsp;&emsp;&ensp; specific Hospital for any of its keys. <br>
 
 &emsp; &emsp; &emsp; &emsp; &emsp; ``Hospital.id -> Doctor(5);`` <br>
 &emsp; &emsp; &emsp; &emsp; &emsp; &emsp; Creates a relational limit where a Hospital entity can only be <br>
 &emsp; &emsp; &emsp; &emsp; &emsp; &emsp; related to 5 Doctor entities via the Hospital key id. <br>
-&emsp; &emsp; &emsp; &emsp; &emsp; &emsp; **Note**: This will create a pool for any Doctor foreign key referring to this specific Hospital id key <br>
+&emsp; &emsp; &emsp; &emsp; &emsp; &emsp; **Note**: This will create a pool for any Doctor foreign key referring to this <br>
+&emsp; &emsp; &emsp; &emsp; &emsp; &emsp; &emsp;&emsp;&ensp; specific Hospital id key. <br>
 
 &emsp; &emsp; &emsp; &emsp; &emsp; ``Hospital.id -> Doctor(1, 5);`` <br>
 &emsp; &emsp; &emsp; &emsp; &emsp; &emsp; Creates a relational limit where a Hospital entity can only be <br>
 &emsp; &emsp; &emsp; &emsp; &emsp; &emsp; related to between 1 and 5 Doctor entities via the Hospital key id. <br>
-&emsp; &emsp; &emsp; &emsp; &emsp; &emsp; **Note**: This will create a pool for any Doctor foreign key referring to this specific Hospital id key <br>
+&emsp; &emsp; &emsp; &emsp; &emsp; &emsp; **Note**: This will create a pool for any Doctor foreign key referring to this <br>
+&emsp; &emsp; &emsp; &emsp; &emsp; &emsp; &emsp;&emsp;&ensp; specific Hospital id key. <br>
 
-&emsp;&emsp;&emsp;&emsp; The Full structure for 2 is ``<Referenced Entity>(.<Any key in Referenced Entity>)? (->|=) <Foreign Entity>((<lower bound>,)?<upper bound>);``
+> The Full structure for 2 is <br>
+> \<Referenced Entity>(.\<Any key in Referenced Entity>)? (->|=) \<Foreign Entity>((<lower bound>,)?\<upper bound>); <br>
 > ? means optional, | or \<> means replace with something valid
 
 <hr>
