@@ -8,7 +8,7 @@ specified by the user.
 
 <hr>
 
-##random_gex
+## random_gex
 
 #### Uses ascii.
 
