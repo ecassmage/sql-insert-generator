@@ -34,6 +34,20 @@ class SQPYGrammarError(IncorrectSQPYError):
 
 
 class IncorrectFileError(Exception):
-    def __init__(self, file):
-        super().__init__(f"{file} is not a .sqpy file. There fore I will not except it!!!")
+    def __init__(self, file, message="is not a .sqpy file. There fore I will not except it!!!"):
+        super().__init__(f"{file + ' ' if file != '' else ''}{message}")
 
+
+class NoFileGivenError(IncorrectFileError):
+    def __init__(self, message):
+        super().__init__("", message)
+
+
+class InternalProblemError(Exception):
+    def __init__(self, message=f"Internal Problem Error!!!"):
+        super().__init__(message)
+
+
+class RepeatingPrimaryKeyLoop(Exception):
+    def __init__(self, message=f"Attempt at assigning a unique id has lead to a near infinite loop Error."):
+        super().__init__(message)

@@ -1,68 +1,90 @@
 """
-
 What I want is something regex like though simplified
 [0-9]{5} should return a number between 00000 and 99999 and
 [a-z]{2} should return a string between aa and zz and
-[a-z]{1, 2} should return a string between a and zz. NVM about this, I don't see the real use for this. I might add this later.
+Ignore This -> [a-z]{1, 2} should return a string between a and zz. I might add this later.
 simple stuff similar to regex in syntax, there won't be support for + * ? in context of length since it wouldn't be able to end as we aren't here to match patterns.
 """
-# import copy
+
 import random
 
 from SQPYErrors import GrammarError, SQPYGrammarError
 
 
 class Grammar:
-    def __init__(self, attribute, grammar, defines=None):
+    def __init__(self, entity, attribute, grammar, defines=None, flag=0):
         self.specialCharacters = {'{': -1, '}': -2, '[': -3, ']': -4, '(': -5, ')': -6}
+
+        self.entity = entity
         self.attribute = attribute
-        self.grammar = grammar[1]
+
         self.type = grammar[0]
+        self.grammar = self.__set_grammar(grammar[1])
+        self.flag = flag
+
         self.first = None  # will be to store the first so it can always be found again
         self.current = None  # will store where currently located
+
         self.totalCombinations = 0
-        self.used = []
 
         self.__defineLength()
+        pass
 
-    def getChoice(self):
+    def getChoice(self, optional=None):
+        if self.attribute.unique and self.type == 2:
+            self.__change_type()
+
         match self.type:
             case -1:
-                match self.grammar:
-                    case 'AUTOINCREMENT':
-                        self.attribute.entity.entities.autoincrement[self.attribute.name] += 1
-                        return self.attribute.entity.entities.autoincrement[self.attribute.name] - 1
+                return self.__getSpecial()
             case 0:
                 raise SQPYGrammarError("File incorrectly stored")
             case 1:
-                if len(self.grammar) == 0:
-                    raise SQPYGrammarError(f"Not enough unique combinations available for: {self.attribute.entity.name}: {self.attribute.name}")
-                choice = random.choice(self.grammar)
-                if self.attribute.unique:
-                    self.grammar.pop(self.grammar.index(choice))
-                return choice
+                return self.__getArray(optional)
             case 2:
-                self.current = self.first
-                string = ''
-
-                while self.current is not None:
-                    string += random.choice(self.current.possibilities)
-                    self.current = self.current.next
-                self.current = self.first
-                if self.attribute.unique:
-                    if len(self.used) >= self.totalCombinations:
-                        raise SQPYGrammarError("Not enough unique combinations for a unique attribute")
-                    while True:
-                        if string not in self.used:
-                            break
-                        while self.current is not None:
-                            string += random.choice(self.current.possibilities)
-                            self.current = self.current.next
-                        self.current = self.first
-                    self.used.append(string)
-                return string
+                return self.__get_r_gex(optional)
             case _:
                 raise GrammarError("random choice could not be generated.")
+
+    def __set_grammar(self, value):
+        if self.type == -1:
+            if value.lower() == 'autoincrement':
+                return [0, 0]
+        return value
+
+    def __getSpecial(self):
+        match self.grammar[0]:
+            case 0:
+                self.grammar[1] += 1
+                return self.grammar[1] - 1
+
+    def __getArray(self, optional: list):
+        if len(self.grammar) == 0:
+            raise SQPYGrammarError(f"Not enough unique combinations available for: {self.entity.name}: {self.attribute.name}")
+        choice = random.choice(self.grammar)
+        if self.attribute.unique:
+            self.grammar.pop(self.grammar.index(choice))
+        return choice
+
+    def __get_r_gex(self, optional):
+        self.current = self.first
+        string = ''
+        while self.current is not None:
+            string += random.choice(self.current.possibilities)
+            self.current = self.current.next
+        self.current = self.first
+        # if self.attribute.unique:
+        #     if len(self.used) >= self.totalCombinations:
+        #         raise SQPYGrammarError("Not enough unique combinations for a unique attribute")
+        #     while True:
+        #         if string not in self.used:
+        #             break
+        #         while self.current is not None:
+        #             string += random.choice(self.current.possibilities)
+        #             self.current = self.current.next
+        #         self.current = self.first
+        #     self.used.append(string)
+        return string
 
     def __set(self):
         self.__Grammar_Encoder()
@@ -78,14 +100,30 @@ class Grammar:
             case 2:
                 self.__set()
                 while self.current is not None:
-                    self.totalCombinations += len(self.current.possibilities)
+                    self.totalCombinations = self.totalCombinations * len(self.current.possibilities) if self.totalCombinations > 0 else len(self.current.possibilities)
                     self.current = self.current.next
                 self.current = self.first
+
+    def __change_type(self):
+        if 0 < self.totalCombinations <= 25000:
+            self.type = 1
+            self.grammar = self.__build_array(self.current)
+
+        pass
+
+    def __build_array(self, this_node):
+        arr = []
+        array_return = self.__build_array(this_node.next) if this_node.next is not None else ['']
+        for char in this_node.possibilities:
+            for ele in array_return:
+                arr.append(char + ele)
+        return arr
 
     def __Grammar_Encoder(self):
         array_encoded = []
         ptr = 0
         inside = False
+        self.grammar = str(self.grammar)
         while ptr < len(self.grammar):
             if self.grammar[ptr] != '\\':
                 if not inside:
@@ -233,7 +271,7 @@ class Grammar:
 
 
 class Node:
-    def __init__(self, possibilities):
+    def __init__(self, possibilities: list):
         self.possibilities = possibilities
         self.next = None
 
@@ -249,7 +287,7 @@ def main():
     # while g.current is not None:
     #     print(f"{g.current.possibilities} -> ", end='')
     #     g.current = g.current.next
-    g = Grammar([2, '[0-9{}[()]{5} [0-9]{5}-0 AUTOINCREMENT [A-a]'])
+    g = Grammar(None, None, [2, '[0-9{}[()]{5} [0-9]{5}-0 AUTOINCREMENT [A-a]'])
     # while g.current is not None:
     #     print(g.current.possibilities)
     #     g.current = g.current.next
