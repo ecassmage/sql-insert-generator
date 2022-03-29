@@ -2,7 +2,7 @@ import re
 
 import Grammar
 from SQPYErrors import SQPYGrammarError, IncorrectSQPYError
-import Attribute
+From Entity import Attribute
 
 
 def collect_grammar(line): return __collect_grammar(line)
