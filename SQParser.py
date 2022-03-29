@@ -137,7 +137,6 @@ def __fill_foreign_key(entities):
 def find_most_suitable_entry(entity_of_foreign, attribute, entity, name):
     entities_in_range = []
     for ent in entity:
-        look_up_name = (entity_of_foreign.name, entity_of_foreign.name + '.' + attribute, '.' + attribute)
         look_up_code = (ent.limits.get(entity_of_foreign.name, [-1, -1, -1]), ent.limits.get(entity_of_foreign.name + '.' + attribute, [-1, -1, -1]), ent.limits.get('.' + attribute, [-1, -1, -1]))
         largest = (max(look_up_code, key=lambda x: x[0])[0], max(look_up_code, key=lambda x:  x[1])[1], max(look_up_code, key=lambda x:  x[2])[2])
 
@@ -152,7 +151,10 @@ def find_most_suitable_entry(entity_of_foreign, attribute, entity, name):
 
     if len(entities_in_range) == 0:
         raise IncorrectSQPYError(f"Ran out of entities to act as foreign keys. {name} -> {entity_of_foreign.name}")
-    return random.choice(entities_in_range)
+    choice = random.choice(entities_in_range)
+    look_up_code = (choice.limits.get(entity_of_foreign.name, [-1, -1, -1]), choice.limits.get(entity_of_foreign.name + '.' + attribute, [-1, -1, -1]), choice.limits.get('.' + attribute, [-1, -1, -1]))
+    look_up_code[0][2], look_up_code[1][2], look_up_code[2][2] = look_up_code[0][2] + 1, look_up_code[1][2] + 1, look_up_code[2][2] + 1
+    return choice
 
 
 def __fill_foreign_keys_non_primary(siblings, entity_sib, attribute, entities, entity, list_keys, index):
