@@ -54,4 +54,4 @@ def __main__(arg1=None, arg2=None):
 
 
 if __name__ == '__main__':
-    __main__()
+    __main__('proj.sqpy')

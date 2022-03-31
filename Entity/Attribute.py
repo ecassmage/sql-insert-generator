@@ -56,5 +56,4 @@ class Attribute:
                 self.value = "'" + value + "'"
 
     def __str__(self):
-        return str(f"{self.name}: {{type: {self.type}, choices: {{choice: {self.choice}, null: {self.null}}}, unique: {self.unique}, primary: {self.primary}, foreign: {self.__foreign_key}}}" if self.value is None
-                   else self.value)
+        return 'null' if self.value is None else str(self.value)

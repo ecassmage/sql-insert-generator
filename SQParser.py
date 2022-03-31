@@ -136,23 +136,26 @@ def __fill_foreign_key(entities):
 
 def find_most_suitable_entry(entity_of_foreign, attribute, entity, name):
     entities_in_range = []
+    # look_up_name = (entity_of_foreign.name, entity_of_foreign.name + '.' + attribute, '.' + attribute)
     for ent in entity:
-        look_up_name = (entity_of_foreign.name, entity_of_foreign.name + '.' + attribute, '.' + attribute)
         look_up_code = (ent.limits.get(entity_of_foreign.name, [-1, -1, -1]), ent.limits.get(entity_of_foreign.name + '.' + attribute, [-1, -1, -1]), ent.limits.get('.' + attribute, [-1, -1, -1]))
-        largest = (max(look_up_code, key=lambda x: x[0])[0], max(look_up_code, key=lambda x:  x[1])[1], max(look_up_code, key=lambda x:  x[2])[2])
+        largest = (max(look_up_code, key=lambda x: x[0])[0], max(look_up_code, key=lambda x: x[1])[1], max(look_up_code, key=lambda x:  x[2])[2])
 
         if max(largest) == -1:
             return random.choice(entity)
 
         if largest[2] < largest[0]:
-            look_up_code[0][2], look_up_code[1][2], look_up_code[2][2] = look_up_code[0][2] + 1, look_up_code[1][2] + 1, look_up_code[2][2] + 1  # should increase them all by 1, however only those that are actually stored get saved
+            # look_up_code[0][2], look_up_code[1][2], look_up_code[2][2] = look_up_code[0][2] + 1, look_up_code[1][2] + 1, look_up_code[2][2] + 1  # should increase them all by 1, however only those that are actually stored get saved
             return ent
         if largest[2] < largest[1]:
             entities_in_range.append(ent)
 
     if len(entities_in_range) == 0:
         raise IncorrectSQPYError(f"Ran out of entities to act as foreign keys. {name} -> {entity_of_foreign.name}")
-    return random.choice(entities_in_range)
+    choice = random.choice(entities_in_range)
+    # look_up_code = (choice.limits.get(entity_of_foreign.name, [-1, -1, -1]), choice.limits.get(entity_of_foreign.name + '.' + attribute, [-1, -1, -1]), choice.limits.get('.' + attribute, [-1, -1, -1]))
+    # look_up_code[0][2], look_up_code[1][2], look_up_code[2][2] = look_up_code[0][2] + 1, look_up_code[1][2] + 1, look_up_code[2][2] + 1
+    return choice
 
 
 def __fill_foreign_keys_non_primary(siblings, entity_sib, attribute, entities, entity, list_keys, index):
@@ -164,7 +167,11 @@ def __fill_foreign_keys_non_primary(siblings, entity_sib, attribute, entities, e
         if index_foreign < index_self:
 
             foreign_entity = entities[foreign_values[0]]
+
             choice = find_most_suitable_entry(entity_sib, foreign_values[1], foreign_entity.entity_siblings, foreign_entity.name)
+            look_up_code = (choice.limits.get(entity_sib.name, [-1, -1, -1]), choice.limits.get(entity_sib.name + '.' + attribute, [-1, -1, -1]), choice.limits.get('.' + attribute, [-1, -1, -1]))
+            look_up_code[0][2], look_up_code[1][2], look_up_code[2][2] = look_up_code[0][2] + 1, look_up_code[1][2] + 1, look_up_code[2][2] + 1
+
             entity_sib.attributes[attribute].set_value(choice.attributes[foreign_values[1]] if foreign_values[1] in choice.attributes else choice.primary_attributes[foreign_values[1]])
             # if entity_sib.attributes[attribute] == 'null':
             #     pass  # Not sure why I wrote this part, so I am leaving it here in case I actually had a reason
@@ -172,7 +179,11 @@ def __fill_foreign_keys_non_primary(siblings, entity_sib, attribute, entities, e
         elif index_foreign == index_self:
 
             try:
+
                 choice = find_most_suitable_entry(entity_sib, foreign_values[1], siblings.entity_siblings[:index], entity_sib.name)
+                look_up_code = (choice.limits.get(entity_sib.name, [-1, -1, -1]), choice.limits.get(entity_sib.name + '.' + attribute, [-1, -1, -1]), choice.limits.get('.' + attribute, [-1, -1, -1]))
+                look_up_code[0][2], look_up_code[1][2], look_up_code[2][2] = look_up_code[0][2] + 1, look_up_code[1][2] + 1, look_up_code[2][2] + 1
+
                 entity_sib.attributes[attribute].set_value(choice.attributes[foreign_values[1]] if foreign_values[1] in choice.attributes else choice.primary_attributes[foreign_values[1]])
             except IncorrectSQPYError:
                 entity_sib.attributes[attribute].set_value('null')
@@ -217,17 +228,30 @@ def __fill_foreign_keys_primary(siblings, entity_sib, entities, entity, list_key
                 else:
                     choices.append(entity_sib.attributes[attribute].set_value('null'))
             else:
-                return
+                choices.append(entity_sib.primary_attributes[attribute].choice.getChoice())
+
+        if len(choices_attributes) > 0:
+            pass
+
         if __check_primary_usability(choices, siblings, choices_attributes) is not None:
             num = 0
             for attribute in entity_sib.primary_attributes:
                 if entity_sib.primary_attributes[attribute].is_foreign():
+                    look_up_code = (choices[num].limits.get(entity_sib.name, [-1, -1, -1]), choices[num].limits.get(entity_sib.name + '.' + entity_sib.primary_attributes[attribute].get_foreign()[1], [-1, -1, -1]), choices[num].limits.get('.' + entity_sib.primary_attributes[attribute].get_foreign()[1], [-1, -1, -1]))
+                    # look_up_code = (ent.limits.get(entity_of_foreign.name, [-1, -1, -1]), ent.limits.get(entity_of_foreign.name + '.' + attribute, [-1, -1, -1]), ent.limits.get('.' + attribute, [-1, -1, -1]))
+                    look_up_code[0][2], look_up_code[1][2], look_up_code[2][2] = look_up_code[0][2] + 1, look_up_code[1][2] + 1, look_up_code[2][2] + 1
                     foreign_values = entity_sib.primary_attributes[attribute].get_foreign()
+
                     entity_sib.primary_attributes[attribute].set_value(choices[num].primary_attributes[foreign_values[1]] if foreign_values[1] in choices[num].primary_attributes else choices[num].primary_attributes[foreign_values[1]])
-                    num += 1
+                else:
+                    entity_sib.primary_attributes[attribute].set_value(choices[num])
+                    pass
+                num += 1
             return
         else:
             iterations += 1
+            if iterations > 1000:
+                pass
             if iterations >= 25000:
                 raise RecursionError(f"{siblings.name} Primary Key has exceeded the number of iterations allotted and has been deemed a near infinite loop and been terminated")
 
