@@ -169,7 +169,7 @@ def __fill_foreign_keys_non_primary(siblings, entity_sib, attribute, entities, e
             foreign_entity = entities[foreign_values[0]]
 
             choice = find_most_suitable_entry(entity_sib, foreign_values[1], foreign_entity.entity_siblings, foreign_entity.name)
-            look_up_code = (choice.limits.get(entity_sib.name, [-1, -1, -1]), choice.limits.get(entity_sib.name + '.' + attribute, [-1, -1, -1]), choice.limits.get('.' + attribute, [-1, -1, -1]))
+            look_up_code = (choice.limits.get(entity_sib.name, [-1, -1, -1]), choice.limits.get(entity_sib.name + '.' + foreign_values[1], [-1, -1, -1]), choice.limits.get('.' + foreign_values[1], [-1, -1, -1]))
             look_up_code[0][2], look_up_code[1][2], look_up_code[2][2] = look_up_code[0][2] + 1, look_up_code[1][2] + 1, look_up_code[2][2] + 1
 
             entity_sib.attributes[attribute].set_value(choice.attributes[foreign_values[1]] if foreign_values[1] in choice.attributes else choice.primary_attributes[foreign_values[1]])
@@ -181,7 +181,7 @@ def __fill_foreign_keys_non_primary(siblings, entity_sib, attribute, entities, e
             try:
 
                 choice = find_most_suitable_entry(entity_sib, foreign_values[1], siblings.entity_siblings[:index], entity_sib.name)
-                look_up_code = (choice.limits.get(entity_sib.name, [-1, -1, -1]), choice.limits.get(entity_sib.name + '.' + attribute, [-1, -1, -1]), choice.limits.get('.' + attribute, [-1, -1, -1]))
+                look_up_code = (choice.limits.get(entity_sib.name, [-1, -1, -1]), choice.limits.get(entity_sib.name + '.' + foreign_values[1], [-1, -1, -1]), choice.limits.get('.' + foreign_values[1], [-1, -1, -1]))
                 look_up_code[0][2], look_up_code[1][2], look_up_code[2][2] = look_up_code[0][2] + 1, look_up_code[1][2] + 1, look_up_code[2][2] + 1
 
                 entity_sib.attributes[attribute].set_value(choice.attributes[foreign_values[1]] if foreign_values[1] in choice.attributes else choice.primary_attributes[foreign_values[1]])
@@ -238,6 +238,7 @@ def __fill_foreign_keys_primary(siblings, entity_sib, entities, entity, list_key
             for attribute in entity_sib.primary_attributes:
                 if entity_sib.primary_attributes[attribute].is_foreign():
                     look_up_code = (choices[num].limits.get(entity_sib.name, [-1, -1, -1]), choices[num].limits.get(entity_sib.name + '.' + entity_sib.primary_attributes[attribute].get_foreign()[1], [-1, -1, -1]), choices[num].limits.get('.' + entity_sib.primary_attributes[attribute].get_foreign()[1], [-1, -1, -1]))
+                    look_up_code_words = (entity_sib.name, entity_sib.name + '.' + entity_sib.primary_attributes[attribute].get_foreign()[1], '.' + entity_sib.primary_attributes[attribute].get_foreign()[1])
                     # look_up_code = (ent.limits.get(entity_of_foreign.name, [-1, -1, -1]), ent.limits.get(entity_of_foreign.name + '.' + attribute, [-1, -1, -1]), ent.limits.get('.' + attribute, [-1, -1, -1]))
                     look_up_code[0][2], look_up_code[1][2], look_up_code[2][2] = look_up_code[0][2] + 1, look_up_code[1][2] + 1, look_up_code[2][2] + 1
                     foreign_values = entity_sib.primary_attributes[attribute].get_foreign()
